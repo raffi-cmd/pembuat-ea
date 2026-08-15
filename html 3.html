@@ -1,0 +1,2027 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MQL5 Forge — No-Code EA Generator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --bg:#080A0D;
+  --bg-panel:#0D1116;
+  --bg-elevated:#12171E;
+  --bg-input:#0A0E13;
+  --border:#1C242D;
+  --border-active:#1FE7C4;
+  --text:#E3E9F0;
+  --text-dim:#8896A3;
+  --text-faint:#4A5568;
+  --accent:#22E6C7;
+  --accent-2:#2BD1FF;
+  --accent-soft:rgba(34,230,199,0.09);
+  --accent-line:rgba(34,230,199,0.4);
+  --accent-glow:rgba(34,230,199,0.35);
+  --warn:#FFB020;
+  --warn-soft:rgba(255,176,32,0.10);
+  --danger:#FF4D6D;
+  --danger-soft:rgba(255,77,109,0.10);
+  --violet:#B98CFF;
+  --violet-soft:rgba(185,140,255,0.10);
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+
+body{
+  background:
+    radial-gradient(ellipse 1000px 550px at 12% -8%, rgba(34,230,199,0.07), transparent 58%),
+    radial-gradient(ellipse 800px 460px at 102% 4%, rgba(43,209,255,0.05), transparent 55%),
+    radial-gradient(ellipse 700px 400px at 60% 110%, rgba(185,140,255,0.04), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+::selection{ background:var(--accent-soft); color:var(--accent); }
+
+*::-webkit-scrollbar{ width:9px; height:9px; }
+*::-webkit-scrollbar-track{ background:transparent; }
+*::-webkit-scrollbar-thumb{ background:#232D38; border-radius:6px; }
+*::-webkit-scrollbar-thumb:hover{ background:#2E3A47; }
+
+/* ============ TOP BAR ============ */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:15px 28px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  position:relative;
+}
+.topbar::after{
+  content:''; position:absolute; left:0; right:0; bottom:-1px; height:1px;
+  background:linear-gradient(90deg, transparent, var(--accent-line), transparent);
+  opacity:.6;
+}
+.brand{ display:flex; align-items:center; gap:12px; }
+.brand-mark{
+  width:36px; height:36px; border-radius:9px;
+  background:linear-gradient(155deg, var(--accent), var(--accent-2));
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-weight:800; font-size:15px; color:#04120E;
+  box-shadow:0 0 0 1px rgba(34,230,199,0.3), 0 0 22px -3px var(--accent-glow), 0 8px 18px -8px rgba(0,0,0,0.6);
+}
+.brand-text h1{ font-size:16px; font-weight:800; letter-spacing:0.2px; }
+.brand-text p{
+  font-size:10.8px; color:var(--text-dim); font-family:var(--mono); margin-top:2px; letter-spacing:0.6px; text-transform:uppercase;
+}
+.topbar-right{ display:flex; align-items:center; gap:10px; }
+.pill{
+  font-family:var(--mono); font-size:11px; color:var(--text-dim);
+  border:1px solid var(--border); padding:6px 12px; border-radius:20px;
+  display:flex; align-items:center; gap:7px;
+  background:rgba(255,255,255,0.015);
+}
+.pill .dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 9px var(--accent), 0 0 2px var(--accent); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
+
+/* ============ LAYOUT ============ */
+.layout{
+  display:grid;
+  grid-template-columns:440px 1fr;
+  height:calc(100vh - 66px);
+}
+@media (max-width: 1000px){
+  .layout{ grid-template-columns:1fr; height:auto; }
+  .output-panel{ height:80vh; }
+}
+
+/* ============ LEFT: CONFIG PANEL ============ */
+.config-panel{
+  border-right:1px solid var(--border);
+  overflow-y:auto;
+  padding:18px 18px 70px;
+  background:var(--bg-panel);
+}
+
+.section{
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin-bottom:11px;
+  overflow:hidden;
+  background:var(--bg-elevated);
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.section.has-active{ border-color:rgba(34,230,199,0.28); box-shadow:0 0 0 1px rgba(34,230,199,0.05), 0 12px 28px -18px rgba(34,230,199,0.35); }
+
+.section-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 15px;
+  cursor:pointer;
+  user-select:none;
+}
+.section-head:hover{ background:rgba(255,255,255,0.02); }
+.section-title{ display:flex; align-items:center; gap:11px; flex-wrap:wrap; }
+.section-icon{
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.04); color:var(--text-dim);
+  font-size:13.5px; flex-shrink:0;
+}
+.section.has-active .section-icon{ background:var(--accent-soft); color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent-line); }
+.section-title h3{ font-size:13.5px; font-weight:700; letter-spacing:0.1px; }
+
+.cat-badge{
+  font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
+  padding:3px 8px; border-radius:20px; border:1px solid transparent;
+}
+.cat-badge.cat-signal{ color:var(--accent); background:var(--accent-soft); border-color:rgba(34,230,199,0.25); }
+.cat-badge.cat-risk{ color:var(--warn); background:var(--warn-soft); border-color:rgba(255,176,32,0.25); }
+.cat-badge.cat-safety{ color:var(--danger); background:var(--danger-soft); border-color:rgba(255,77,109,0.25); }
+.cat-badge.cat-exit{ color:var(--violet); background:var(--violet-soft); border-color:rgba(185,140,255,0.25); }
+
+.section-title span.count{
+  font-family:var(--mono); font-size:10.5px; font-weight:700; color:var(--accent);
+  background:var(--accent-soft); padding:1px 7px; border-radius:10px;
+  display:none;
+}
+.section.has-active .count{ display:inline-block; }
+.chevron{ color:var(--text-faint); font-size:11px; transition:transform .18s ease; flex-shrink:0; }
+.section.open .chevron{ transform:rotate(180deg); color:var(--accent); }
+
+.section-body{
+  max-height:0; overflow:hidden;
+  transition:max-height .22s ease;
+  border-top:1px solid transparent;
+}
+.section.open .section-body{ border-top:1px solid var(--border); }
+.section-body-inner{ padding:14px 15px 16px; display:flex; flex-direction:column; gap:12px; }
+
+/* module (checkbox + collapsible sub-fields) */
+.module{
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--bg-input);
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.module.active{
+  border-color:var(--accent-line);
+  background:linear-gradient(180deg, rgba(34,230,199,0.05), rgba(34,230,199,0.015));
+  box-shadow:0 0 0 1px rgba(34,230,199,0.08), 0 0 18px -6px var(--accent-glow);
+}
+.module.warn-active{ border-color:rgba(255,77,109,0.45); box-shadow:0 0 0 1px rgba(255,77,109,0.1), 0 0 18px -6px rgba(255,77,109,0.35); }
+
+.module-toggle{ display:flex; align-items:center; gap:10px; padding:11px 12px; cursor:pointer; }
+.checkbox{
+  width:18px; height:18px; border-radius:5px;
+  border:1.5px solid #35404C;
+  flex-shrink:0; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .12s ease;
+}
+.module.active .checkbox{ background:linear-gradient(155deg, var(--accent), var(--accent-2)); border-color:var(--accent); box-shadow:0 0 10px -1px var(--accent-glow); }
+.checkbox svg{ width:11px; height:11px; opacity:0; transition:opacity .1s; }
+.module.active .checkbox svg{ opacity:1; }
+.module-toggle label{ font-size:12.5px; font-weight:600; cursor:pointer; flex:1; }
+.module-toggle .sub{ display:block; font-size:10.5px; color:var(--text-faint); font-weight:400; margin-top:2px; }
+.risk-tag{
+  font-family:var(--mono); font-size:8.5px; font-weight:700; letter-spacing:0.4px;
+  color:var(--danger); background:var(--danger-soft); border:1px solid rgba(255,77,109,0.3);
+  padding:2px 6px; border-radius:5px; margin-left:6px; text-transform:uppercase; vertical-align:middle;
+}
+
+.module-fields{ max-height:0; overflow:hidden; transition:max-height .18s ease; padding:0 12px; }
+.module.active .module-fields{ padding-bottom:12px; }
+
+.field-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+.field-row.single{ grid-template-columns:1fr; }
+.field-row.triple{ grid-template-columns:1fr 1fr 1fr; }
+.field{ display:flex; flex-direction:column; gap:4px; }
+.field label{ font-size:10px; color:var(--text-dim); font-weight:600; letter-spacing:0.2px; }
+.field input[type=text], .field input[type=number], .field select{
+  background:var(--bg); border:1px solid var(--border);
+  color:var(--text); font-family:var(--mono); font-size:12px;
+  padding:7px 8px; border-radius:6px; width:100%;
+  outline:none; transition:border-color .12s ease, box-shadow .12s ease;
+}
+.field input:focus, .field select:focus{ border-color:var(--accent-line); box-shadow:0 0 0 3px rgba(34,230,199,0.08); }
+.field select{ cursor:pointer; }
+.field-note{ font-size:9.5px; color:var(--text-faint); grid-column:1 / -1; margin-top:-2px; line-height:1.4; }
+
+.direct-field{ display:flex; flex-direction:column; gap:4px; }
+.direct-field label{ font-size:10.5px; color:var(--text-dim); font-weight:600; }
+.direct-field input, .direct-field select{
+  background:var(--bg-input); border:1px solid var(--border);
+  color:var(--text); font-family:var(--mono); font-size:12.5px;
+  padding:8px 10px; border-radius:7px; width:100%; outline:none;
+  transition:border-color .12s ease, box-shadow .12s ease;
+}
+.direct-field input:focus, .direct-field select:focus{ border-color:var(--accent-line); box-shadow:0 0 0 3px rgba(34,230,199,0.08); }
+.direct-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+.hint{ font-size:10.5px; color:var(--text-faint); line-height:1.55; padding:0 1px; }
+.hint.hint-warn{ color:#FF8FA3; }
+
+/* ============ RIGHT: OUTPUT PANEL (sticky IDE) ============ */
+.output-panel{
+  display:flex; flex-direction:column; height:100%; overflow:hidden;
+  position:sticky; top:0;
+  background:var(--bg-input);
+}
+
+.ide-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0; border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg, var(--bg-elevated), var(--bg-panel));
+  flex-wrap:wrap;
+}
+.ide-titlebar{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 18px; width:100%;
+  border-bottom:1px solid var(--border);
+}
+.ide-dots{ display:flex; gap:6px; }
+.ide-dots span{ width:10px; height:10px; border-radius:50%; }
+.ide-dots span:nth-child(1){ background:#FF5F57; }
+.ide-dots span:nth-child(2){ background:#FEBC2E; }
+.ide-dots span:nth-child(3){ background:#28C840; }
+.ide-filetab{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--mono); font-size:12.5px; color:var(--text);
+  background:var(--bg-input); border:1px solid var(--border); border-bottom:2px solid var(--accent);
+  padding:6px 13px; border-radius:7px 7px 0 0; margin-left:8px;
+}
+.ide-filetab .ext{ color:var(--accent); font-weight:700; }
+.ide-filetab svg{ width:13px; height:13px; color:var(--accent); flex-shrink:0; }
+
+.ide-metabar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 18px; width:100%; gap:12px; flex-wrap:wrap;
+}
+.ide-stats{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.stat{ font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+.stat b{ color:var(--text); font-weight:700; }
+.stat .stat-dot{ width:5px; height:5px; border-radius:50%; background:var(--text-faint); }
+
+.ide-actions{ display:flex; gap:8px; }
+.btn{
+  font-family:var(--sans); font-size:12.5px; font-weight:700;
+  padding:9px 15px; border-radius:8px; border:1px solid var(--border);
+  background:var(--bg-elevated); color:var(--text); cursor:pointer;
+  display:flex; align-items:center; gap:7px;
+  transition:all .12s ease;
+}
+.btn:hover{ border-color:#3D4B59; background:#1A222B; transform:translateY(-1px); }
+.btn-primary{
+  background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#04120E; border-color:transparent;
+  box-shadow:0 0 20px -5px var(--accent-glow);
+}
+.btn-primary:hover{ box-shadow:0 0 26px -4px var(--accent-glow); transform:translateY(-1px); }
+.btn svg{ width:14px; height:14px; }
+
+/* blueprint strip */
+.blueprint{
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  padding:10px 18px; border-bottom:1px solid var(--border);
+  background:repeating-linear-gradient(135deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 14px), var(--bg-panel);
+  min-height:41px;
+}
+.blueprint .bp-label{ font-family:var(--mono); font-size:9.5px; color:var(--text-faint); margin-right:4px; letter-spacing:0.5px; text-transform:uppercase; }
+.bp-chip{
+  font-family:var(--mono); font-size:10.5px; font-weight:600; color:var(--accent);
+  background:var(--accent-soft); border:1px solid var(--accent-line);
+  padding:4px 10px; border-radius:20px;
+  animation:popIn .15s ease;
+}
+.bp-chip.bp-warn{ color:var(--danger); background:var(--danger-soft); border-color:rgba(255,77,109,0.35); }
+.bp-empty{ font-family:var(--mono); font-size:10.5px; color:var(--text-faint); font-style:italic; }
+@keyframes popIn{ from{ opacity:0; transform:scale(0.85) translateY(2px); } to{ opacity:1; transform:scale(1) translateY(0); } }
+
+/* code viewer */
+.code-scroll{ flex:1; overflow:auto; background:var(--bg-input); position:relative; }
+.code-scroll::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:60px; pointer-events:none;
+  background:linear-gradient(180deg, rgba(34,230,199,0.03), transparent);
+}
+.code-body{ font-family:var(--mono); font-size:12.5px; line-height:1.68; padding:16px 0 70px; min-width:max-content; }
+.code-line{ display:flex; white-space:pre; }
+.code-line:hover{ background:rgba(34,230,199,0.025); }
+.ln{ width:50px; flex-shrink:0; text-align:right; padding-right:16px; color:var(--text-faint); user-select:none; font-size:11.5px; }
+.code-text{ padding-right:30px; color:var(--text); }
+.code-line.is-comment .code-text{ color:#5C7A8C; }
+.code-line.is-prep .code-text{ color:var(--warn); }
+.code-line.is-blank .code-text{ opacity:0; }
+
+.toast{
+  position:fixed; bottom:22px; right:22px;
+  background:var(--bg-elevated); border:1px solid var(--accent-line);
+  color:var(--text); font-size:12.5px; padding:11px 16px; border-radius:9px;
+  display:flex; align-items:center; gap:8px;
+  box-shadow:0 14px 34px -10px rgba(0,0,0,0.6), 0 0 20px -8px var(--accent-glow);
+  transform:translateY(12px); opacity:0; pointer-events:none;
+  transition:all .2s ease; z-index:50;
+}
+.toast.show{ transform:translateY(0); opacity:1; }
+.toast .tdot{ width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent); }
+
+footer.credit{
+  padding:9px 18px; border-top:1px solid var(--border);
+  font-family:var(--mono); font-size:10.5px; color:var(--text-faint);
+  background:var(--bg-panel);
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">λ5</div>
+    <div class="brand-text">
+      <h1>MQL5 Forge</h1>
+      <p>No-Code Expert Advisor Assembler — MT5</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="pill"><span class="dot"></span> Live compile-ready</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- ================= LEFT CONFIG PANEL ================= -->
+  <div class="config-panel" id="configPanel">
+
+    <!-- SECTION 1: GENERAL -->
+    <div class="section open has-active" data-section="general">
+      <div class="section-head" onclick="toggleSection(this)">
+        <div class="section-title">
+          <div class="section-icon">⚙</div>
+          <h3>Parameter Utama</h3>
+        </div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body" style="max-height:900px;">
+        <div class="section-body-inner">
+          <div class="direct-grid">
+            <div class="direct-field">
+              <label>Nama EA</label>
+              <input type="text" id="eaName" value="MyExpertAdvisor" oninput="onNameInput(); render();">
+            </div>
+            <div class="direct-field">
+              <label>Author</label>
+              <input type="text" id="eaAuthor" value="Raff" oninput="render()">
+            </div>
+          </div>
+          <div class="direct-grid">
+            <div class="direct-field">
+              <label>Magic Number</label>
+              <input type="number" id="magicNumber" value="778001" oninput="render()">
+            </div>
+            <div class="direct-field">
+              <label>Fixed Lot Size</label>
+              <input type="number" step="0.01" id="fixedLot" value="0.01" oninput="render()">
+            </div>
+          </div>
+          <div class="direct-grid">
+            <div class="direct-field">
+              <label>Stop Loss (pips)</label>
+              <input type="number" id="slPips" value="30" oninput="render()">
+            </div>
+            <div class="direct-field">
+              <label>Take Profit (pips)</label>
+              <input type="number" id="tpPips" value="60" oninput="render()">
+            </div>
+          </div>
+          <div class="hint">SL/TP = 0 berarti tidak dipasang otomatis oleh EA. Pip dihitung otomatis berdasar _Digits (support 3/5-digit broker seperti Gold XAUUSD).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: ENTRY SIGNALS -->
+    <div class="section" data-section="signals">
+      <div class="section-head" onclick="toggleSection(this)">
+        <div class="section-title">
+          <div class="section-icon">◈</div>
+          <h3>Logika Sinyal Entry</h3>
+          <span class="cat-badge cat-signal">Sinyal</span>
+          <span class="count" data-countfor="signals">0</span>
+        </div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="section-body-inner">
+          <div class="hint">Semua modul yang dicentang digabung dengan logika AND (confluence) — sinyal BUY/SELL hanya terbentuk jika seluruh modul aktif sepakat pada arah yang sama. Setiap indikator punya timeframe sendiri (Multi-Timeframe Filter).</div>
+
+          <!-- EMA/SMA -->
+          <div class="module" data-module="sig_ema">
+            <div class="module-toggle" onclick="toggleModule('sig_ema')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>MA Crossover (EMA/SMA)<span class="sub">Fast &amp; Slow moving average cross</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Fast Period</label><input type="number" id="ema_fast" value="12" oninput="render()"></div>
+                <div class="field"><label>Slow Period</label><input type="number" id="ema_slow" value="26" oninput="render()"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Method</label>
+                  <select id="ema_method" onchange="render()">
+                    <option value="MODE_EMA">EMA</option>
+                    <option value="MODE_SMA">SMA</option>
+                    <option value="MODE_SMMA">SMMA</option>
+                    <option value="MODE_LWMA">LWMA</option>
+                  </select>
+                </div>
+                <div class="field"><label>Applied Price</label>
+                  <select id="ema_price" onchange="render()">
+                    <option value="PRICE_CLOSE">Close</option>
+                    <option value="PRICE_OPEN">Open</option>
+                    <option value="PRICE_HIGH">High</option>
+                    <option value="PRICE_LOW">Low</option>
+                    <option value="PRICE_MEDIAN">Median</option>
+                    <option value="PRICE_TYPICAL">Typical</option>
+                    <option value="PRICE_WEIGHTED">Weighted</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-row single">
+                <div class="field"><label>Timeframe (MTF)</label>
+                  <select id="ema_tf" onchange="render()">
+                    <option value="PERIOD_CURRENT">Current</option>
+                    <option value="PERIOD_M15">M15</option>
+                    <option value="PERIOD_H1">H1</option>
+                    <option value="PERIOD_H4">H4</option>
+                    <option value="PERIOD_D1">D1</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RSI -->
+          <div class="module" data-module="sig_rsi">
+            <div class="module-toggle" onclick="toggleModule('sig_rsi')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>RSI Filter<span class="sub">Reversal dari zona oversold/overbought</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Period</label><input type="number" id="rsi_period" value="14" oninput="render()"></div>
+                <div class="field"><label>Overbought</label><input type="number" id="rsi_ob" value="70" oninput="render()"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Oversold</label><input type="number" id="rsi_os" value="30" oninput="render()"></div>
+                <div class="field"><label>Timeframe (MTF)</label>
+                  <select id="rsi_tf" onchange="render()">
+                    <option value="PERIOD_CURRENT">Current</option>
+                    <option value="PERIOD_M15">M15</option>
+                    <option value="PERIOD_H1">H1</option>
+                    <option value="PERIOD_H4">H4</option>
+                    <option value="PERIOD_D1">D1</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MACD -->
+          <div class="module" data-module="sig_macd">
+            <div class="module-toggle" onclick="toggleModule('sig_macd')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>MACD Cross<span class="sub">MACD line memotong signal line</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Fast EMA</label><input type="number" id="macd_fast" value="12" oninput="render()"></div>
+                <div class="field"><label>Slow EMA</label><input type="number" id="macd_slow" value="26" oninput="render()"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Signal Period</label><input type="number" id="macd_signal" value="9" oninput="render()"></div>
+                <div class="field"><label>Timeframe (MTF)</label>
+                  <select id="macd_tf" onchange="render()">
+                    <option value="PERIOD_CURRENT">Current</option>
+                    <option value="PERIOD_M15">M15</option>
+                    <option value="PERIOD_H1">H1</option>
+                    <option value="PERIOD_H4">H4</option>
+                    <option value="PERIOD_D1">D1</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bollinger -->
+          <div class="module" data-module="sig_bb">
+            <div class="module-toggle" onclick="toggleModule('sig_bb')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Bollinger Bands<span class="sub">Breakout atau reversion dari band</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Period</label><input type="number" id="bb_period" value="20" oninput="render()"></div>
+                <div class="field"><label>Deviation</label><input type="number" step="0.1" id="bb_dev" value="2.0" oninput="render()"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Mode</label>
+                  <select id="bb_mode" onchange="render()">
+                    <option value="BB_BREAKOUT">Breakout</option>
+                    <option value="BB_REVERSION">Reversion</option>
+                  </select>
+                </div>
+                <div class="field"><label>Timeframe (MTF)</label>
+                  <select id="bb_tf" onchange="render()">
+                    <option value="PERIOD_CURRENT">Current</option>
+                    <option value="PERIOD_M15">M15</option>
+                    <option value="PERIOD_H1">H1</option>
+                    <option value="PERIOD_H4">H4</option>
+                    <option value="PERIOD_D1">D1</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stochastic -->
+          <div class="module" data-module="sig_stoch">
+            <div class="module-toggle" onclick="toggleModule('sig_stoch')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Stochastic Oscillator<span class="sub">%K memotong %D di zona ekstrem</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>%K Period</label><input type="number" id="stoch_k" value="5" oninput="render()"></div>
+                <div class="field"><label>%D Period</label><input type="number" id="stoch_d" value="3" oninput="render()"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Slowing</label><input type="number" id="stoch_slow" value="3" oninput="render()"></div>
+                <div class="field"><label>Overbought</label><input type="number" id="stoch_ob" value="80" oninput="render()"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Oversold</label><input type="number" id="stoch_os" value="20" oninput="render()"></div>
+                <div class="field"><label>Timeframe (MTF)</label>
+                  <select id="stoch_tf" onchange="render()">
+                    <option value="PERIOD_CURRENT">Current</option>
+                    <option value="PERIOD_M15">M15</option>
+                    <option value="PERIOD_H1">H1</option>
+                    <option value="PERIOD_H4">H4</option>
+                    <option value="PERIOD_D1">D1</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ATR -->
+          <div class="module" data-module="sig_atr">
+            <div class="module-toggle" onclick="toggleModule('sig_atr')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>ATR Volatility Filter<span class="sub">Gerbang entry, bukan penentu arah</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>ATR Period</label><input type="number" id="atr_period" value="14" oninput="render()"></div>
+                <div class="field"><label>Min Volatility (pips)</label><input type="number" id="atr_minpips" value="5" oninput="render()"></div>
+              </div>
+              <div class="field-row single">
+                <div class="field"><label>Timeframe (MTF)</label>
+                  <select id="atr_tf" onchange="render()">
+                    <option value="PERIOD_CURRENT">Current</option>
+                    <option value="PERIOD_M15">M15</option>
+                    <option value="PERIOD_H1">H1</option>
+                    <option value="PERIOD_H4">H4</option>
+                    <option value="PERIOD_D1">D1</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Engulfing -->
+          <div class="module" data-module="sig_engulf">
+            <div class="module-toggle" onclick="toggleModule('sig_engulf')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Engulfing Candlestick<span class="sub">Price action bullish/bearish engulfing</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row single">
+                <div class="field"><label>Timeframe (MTF)</label>
+                  <select id="engulf_tf" onchange="render()">
+                    <option value="PERIOD_CURRENT">Current</option>
+                    <option value="PERIOD_M15">M15</option>
+                    <option value="PERIOD_H1">H1</option>
+                    <option value="PERIOD_H4">H4</option>
+                    <option value="PERIOD_D1">D1</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: RISK MANAGEMENT -->
+    <div class="section" data-section="risk">
+      <div class="section-head" onclick="toggleSection(this)">
+        <div class="section-title">
+          <div class="section-icon">◎</div>
+          <h3>Manajemen Risiko &amp; Posisi</h3>
+          <span class="cat-badge cat-risk">Manajemen Risiko</span>
+          <span class="count" data-countfor="risk">0</span>
+        </div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="section-body-inner">
+
+          <div class="module" data-module="risk_trail">
+            <div class="module-toggle" onclick="toggleModule('risk_trail')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Trailing Stop<span class="sub">Geser SL mengikuti profit berjalan — Fixed Pips atau ATR Multiplier</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Start Trigger (pips)</label><input type="number" id="trail_start" value="20" oninput="render()"></div>
+                <div class="field"><label>Step (pips)</label><input type="number" id="trail_step" value="5" oninput="render()"></div>
+              </div>
+              <div class="field-row single">
+                <div class="field"><label>Mode Jarak Trailing</label>
+                  <select id="trail_mode" onchange="render()">
+                    <option value="TRAIL_FIXED_PIPS">Fixed Pips</option>
+                    <option value="TRAIL_ATR_MULTIPLIER">ATR Multiplier</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Distance (pips) — Fixed</label><input type="number" id="trail_dist" value="15" oninput="render()"></div>
+                <div class="field"><label>ATR Multiplier</label><input type="number" step="0.1" id="trail_atr_mult" value="2.0" oninput="render()"></div>
+              </div>
+              <div class="field-row single">
+                <div class="field"><label>ATR Period — mode ATR</label><input type="number" id="trail_atr_period" value="14" oninput="render()"></div>
+              </div>
+              <div class="field-note">Mode bisa diubah langsung dari input EA di MetaTrader (tanpa compile ulang) — nilai di sini hanya default awal.</div>
+            </div>
+          </div>
+
+          <div class="module" data-module="risk_be">
+            <div class="module-toggle" onclick="toggleModule('risk_be')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Break Even Auto-Lock<span class="sub">Kunci SL ke area entry + offset</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Trigger (pips)</label><input type="number" id="be_trigger" value="20" oninput="render()"></div>
+                <div class="field"><label>Offset (pips)</label><input type="number" id="be_offset" value="2" oninput="render()"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="module" data-module="risk_partial">
+            <div class="module-toggle" onclick="toggleModule('risk_partial')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Partial Take Profit<span class="sub">Tutup sebagian lot saat target tercapai</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Trigger (pips)</label><input type="number" id="partial_trigger" value="20" oninput="render()"></div>
+                <div class="field"><label>Close %</label><input type="number" id="partial_pct" value="50" oninput="render()"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="module" data-module="risk_dynamic">
+            <div class="module-toggle" onclick="toggleModule('risk_dynamic')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Dynamic Position Sizing<span class="sub">Lot otomatis dari % risk equity, override Fixed Lot</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row single">
+                <div class="field"><label>Risk % / Trade</label><input type="number" step="0.1" id="dynamic_riskpct" value="1.0" oninput="render()"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="module" data-module="risk_maxtrades">
+            <div class="module-toggle" onclick="toggleModule('risk_maxtrades')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Max Trades Limit<span class="sub">Batas posisi terbuka bersamaan</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row single">
+                <div class="field"><label>Max Open Trades</label><input type="number" id="maxtrades_n" value="3" oninput="render()"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NEW: Equity Protection -->
+          <div class="module" data-module="risk_eqprotect">
+            <div class="module-toggle" onclick="toggleModule('risk_eqprotect')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Equity Protection Cut-Off<span class="sub">Emergency stop permanen jika drawdown dari peak equity melebihi X%</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row single">
+                <div class="field"><label>Max Drawdown dari Peak (%)</label><input type="number" step="0.1" id="eqprotect_pct" value="20" oninput="render()"></div>
+              </div>
+              <div class="field-note">Saat terpicu, EA menutup semua posisi &amp; berhenti membuka entry baru sampai EA di-restart.</div>
+            </div>
+          </div>
+
+          <!-- NEW: Martingale / Averaging -->
+          <div class="module" data-module="risk_martingale">
+            <div class="module-toggle" onclick="toggleModule('risk_martingale')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Martingale / Averaging<span class="risk-tag">High Risk</span><span class="sub">Tambah lot saat posisi minus — opsional &amp; berisiko tinggi</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row triple">
+                <div class="field"><label>Multiplier</label><input type="number" step="0.1" id="mart_multiplier" value="2.0" oninput="render()"></div>
+                <div class="field"><label>Distance (pips)</label><input type="number" id="mart_distance" value="150" oninput="render()"></div>
+                <div class="field"><label>Max Steps</label><input type="number" id="mart_maxsteps" value="3" oninput="render()"></div>
+              </div>
+              <div class="hint hint-warn">⚠ Martingale meningkatkan risiko drawdown secara eksponensial dan bisa menghabiskan seluruh equity akun. Selalu backtest ekstensif dan gunakan Equity Protection Cut-Off bersamaan dengan modul ini.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: FILTERS -->
+    <div class="section" data-section="filters">
+      <div class="section-head" onclick="toggleSection(this)">
+        <div class="section-title">
+          <div class="section-icon">◫</div>
+          <h3>Filter &amp; Keamanan Eksekusi</h3>
+          <span class="cat-badge cat-safety">Sistem Safety</span>
+          <span class="count" data-countfor="filters">0</span>
+        </div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="section-body-inner">
+
+          <div class="module" data-module="filt_spread">
+            <div class="module-toggle" onclick="toggleModule('filt_spread')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Max Spread Filter<span class="sub">Batalkan entry jika spread terlalu lebar</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row single">
+                <div class="field"><label>Max Spread (pips)</label><input type="number" id="spread_max" value="30" oninput="render()"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="module" data-module="filt_slippage">
+            <div class="module-toggle" onclick="toggleModule('filt_slippage')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Max Slippage Filter<span class="sub">Batas deviation eksekusi order</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row single">
+                <div class="field"><label>Max Slippage (points)</label><input type="number" id="slippage_max" value="30" oninput="render()"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="module" data-module="filt_session">
+            <div class="module-toggle" onclick="toggleModule('filt_session')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Trading Session Filter<span class="sub">Hanya entry di jam tertentu (server time)</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Jam Mulai (0-23)</label><input type="number" id="sess_start" value="8" oninput="render()"></div>
+                <div class="field"><label>Jam Selesai (0-23)</label><input type="number" id="sess_end" value="20" oninput="render()"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="module" data-module="filt_daily">
+            <div class="module-toggle" onclick="toggleModule('filt_daily')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Daily Loss / Profit Limit<span class="sub">Kill switch harian berbasis equity</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Max Loss ($)</label><input type="number" id="daily_loss" value="50" oninput="render()"></div>
+                <div class="field"><label>Max Profit ($)</label><input type="number" id="daily_profit" value="100" oninput="render()"></div>
+              </div>
+              <div class="hint">Isi 0 untuk menonaktifkan salah satu batas. Reset otomatis tiap hari baru (bukan permanen — beda dengan Equity Protection Cut-Off).</div>
+            </div>
+          </div>
+
+          <div class="module" data-module="filt_onebar">
+            <div class="module-toggle" onclick="toggleModule('filt_onebar')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>One Trade Per Bar<span class="sub">Cegah spam order dalam 1 candle</span></label>
+            </div>
+            <div class="module-fields"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: EXIT LOGIC -->
+    <div class="section" data-section="exit">
+      <div class="section-head" onclick="toggleSection(this)">
+        <div class="section-title">
+          <div class="section-icon">⏻</div>
+          <h3>Logika Exit / Penutupan</h3>
+          <span class="cat-badge cat-exit">Exit</span>
+          <span class="count" data-countfor="exit">0</span>
+        </div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="section-body-inner">
+
+          <div class="module" data-module="exit_opposite">
+            <div class="module-toggle" onclick="toggleModule('exit_opposite')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Close on Opposite Signal<span class="sub">Tutup BUY jika muncul sinyal SELL, dan sebaliknya</span></label>
+            </div>
+            <div class="module-fields"></div>
+          </div>
+
+          <div class="module" data-module="exit_weekend">
+            <div class="module-toggle" onclick="toggleModule('exit_weekend')">
+              <div class="checkbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#04120E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <label>Close All at Weekend<span class="sub">Tutup semua posisi sebelum market tutup</span></label>
+            </div>
+            <div class="module-fields">
+              <div class="field-row">
+                <div class="field"><label>Hari</label>
+                  <select id="weekend_day" onchange="render()">
+                    <option value="5" selected>Jumat</option>
+                    <option value="4">Kamis</option>
+                    <option value="6">Sabtu</option>
+                    <option value="0">Minggu</option>
+                    <option value="1">Senin</option>
+                    <option value="2">Selasa</option>
+                    <option value="3">Rabu</option>
+                  </select>
+                </div>
+                <div class="field"><label>Jam (server)</label><input type="number" id="weekend_hour" value="21" oninput="render()"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= RIGHT OUTPUT PANEL (IDE style) ================= -->
+  <div class="output-panel">
+    <div class="ide-header">
+      <div class="ide-titlebar">
+        <div class="ide-dots"><span></span><span></span><span></span></div>
+        <div class="ide-filetab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+          <span id="filenameLabel">MyExpertAdvisor</span><span class="ext">.mq5</span>
+        </div>
+      </div>
+      <div class="ide-metabar">
+        <div class="ide-stats">
+          <div class="stat"><span class="stat-dot"></span>Baris: <b id="statLines">0</b></div>
+          <div class="stat"><span class="stat-dot"></span>Ukuran: <b id="statSize">0 KB</b></div>
+          <div class="stat"><span class="stat-dot"></span>Modul aktif: <b id="statModules">0</b></div>
+        </div>
+        <div class="ide-actions">
+          <button class="btn" onclick="copyCode()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1"/></svg>
+            Copy Code
+          </button>
+          <button class="btn btn-primary" onclick="downloadCode()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>
+            Download .mq5
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="blueprint" id="blueprintStrip">
+      <span class="bp-label">Blueprint:</span>
+      <span class="bp-empty">Belum ada modul dipilih — EA dasar akan tetap valid &amp; siap compile.</span>
+    </div>
+
+    <div class="code-scroll">
+      <div class="code-body" id="codeBody"></div>
+    </div>
+
+    <footer class="credit">generated by MQL5 Forge · review &amp; backtest before live deployment</footer>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"><span class="tdot"></span><span id="toastText">Copied</span></div>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+var activeModules = {
+  sig_ema:false, sig_rsi:false, sig_macd:false, sig_bb:false, sig_stoch:false, sig_atr:false, sig_engulf:false,
+  risk_trail:false, risk_be:false, risk_partial:false, risk_dynamic:false, risk_maxtrades:false, risk_eqprotect:false, risk_martingale:false,
+  filt_spread:false, filt_slippage:false, filt_session:false, filt_daily:false, filt_onebar:false,
+  exit_opposite:false, exit_weekend:false
+};
+
+var moduleLabels = {
+  sig_ema:"MA Cross", sig_rsi:"RSI", sig_macd:"MACD", sig_bb:"Bollinger", sig_stoch:"Stochastic", sig_atr:"ATR Filter", sig_engulf:"Engulfing",
+  risk_trail:"Trailing SL", risk_be:"Break Even", risk_partial:"Partial TP", risk_dynamic:"Dynamic Lot", risk_maxtrades:"Max Trades",
+  risk_eqprotect:"Equity Protection", risk_martingale:"Martingale",
+  filt_spread:"Spread Filter", filt_slippage:"Slippage Filter", filt_session:"Session Filter", filt_daily:"Daily Limit", filt_onebar:"1 Trade/Bar",
+  exit_opposite:"Close Opposite", exit_weekend:"Weekend Close"
+};
+
+var warnModules = { risk_martingale:true };
+
+var sectionOf = {
+  sig_ema:"signals", sig_rsi:"signals", sig_macd:"signals", sig_bb:"signals", sig_stoch:"signals", sig_atr:"signals", sig_engulf:"signals",
+  risk_trail:"risk", risk_be:"risk", risk_partial:"risk", risk_dynamic:"risk", risk_maxtrades:"risk", risk_eqprotect:"risk", risk_martingale:"risk",
+  filt_spread:"filters", filt_slippage:"filters", filt_session:"filters", filt_daily:"filters", filt_onebar:"filters",
+  exit_opposite:"exit", exit_weekend:"exit"
+};
+
+var lastGeneratedCode = "";
+
+/* ============================================================
+   UI INTERACTIONS
+============================================================ */
+function toggleSection(headEl){
+  var section = headEl.parentElement;
+  section.classList.toggle('open');
+  var body = section.querySelector('.section-body');
+  if(section.classList.contains('open')){
+    body.style.maxHeight = body.scrollHeight + 500 + 'px';
+  } else {
+    body.style.maxHeight = '0px';
+  }
+}
+
+function toggleModule(key){
+  activeModules[key] = !activeModules[key];
+  var modEl = document.querySelector('[data-module="'+key+'"]');
+  modEl.classList.toggle('active', activeModules[key]);
+  if(warnModules[key]) modEl.classList.toggle('warn-active', activeModules[key]);
+  var fieldsEl = modEl.querySelector('.module-fields');
+  if(activeModules[key]){
+    fieldsEl.style.maxHeight = fieldsEl.scrollHeight + 300 + 'px';
+  } else {
+    fieldsEl.style.maxHeight = '0px';
+  }
+  updateSectionBadges();
+  render();
+}
+
+function updateSectionBadges(){
+  var counts = {signals:0, risk:0, filters:0, exit:0};
+  for(var k in activeModules){
+    if(activeModules[k]) counts[sectionOf[k]]++;
+  }
+  for(var s in counts){
+    var badge = document.querySelector('[data-countfor="'+s+'"]');
+    badge.textContent = counts[s];
+    var sectionEl = document.querySelector('[data-section="'+s+'"]');
+    sectionEl.classList.toggle('has-active', counts[s] > 0);
+    if(sectionEl.classList.contains('open')){
+      var body = sectionEl.querySelector('.section-body');
+      body.style.maxHeight = body.scrollHeight + 500 + 'px';
+    }
+  }
+}
+
+function onNameInput(){
+  var name = sanitizeName(document.getElementById('eaName').value || 'MyExpertAdvisor');
+  document.getElementById('filenameLabel').textContent = name;
+}
+
+function sanitizeName(s){
+  s = s.trim().replace(/[^a-zA-Z0-9_]/g, '_');
+  if(s === '') s = 'MyExpertAdvisor';
+  if(/^[0-9]/.test(s)) s = '_' + s;
+  return s;
+}
+
+function updateBlueprint(){
+  var strip = document.getElementById('blueprintStrip');
+  var active = Object.keys(activeModules).filter(function(k){ return activeModules[k]; });
+  var html = '<span class="bp-label">Blueprint:</span>';
+  if(active.length === 0){
+    html += '<span class="bp-empty">Belum ada modul dipilih — EA dasar akan tetap valid &amp; siap compile.</span>';
+  } else {
+    active.forEach(function(k){
+      var cls = warnModules[k] ? 'bp-chip bp-warn' : 'bp-chip';
+      html += '<span class="'+cls+'">'+ moduleLabels[k] +'</span>';
+    });
+  }
+  strip.innerHTML = html;
+}
+
+/* ============================================================
+   HELPERS
+============================================================ */
+function num(id){ var v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; }
+function int_(id){ var v = parseInt(document.getElementById(id).value,10); return isNaN(v) ? 0 : v; }
+function str(id){ return document.getElementById(id).value; }
+function sel(id){ return document.getElementById(id).value; }
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatBytes(bytes){
+  if(bytes < 1024) return bytes + ' B';
+  return (bytes/1024).toFixed(1) + ' KB';
+}
+
+/* ============================================================
+   MQL5 CODE GENERATOR
+============================================================ */
+function buildMQL5(){
+  var M = activeModules;
+  var eaName = sanitizeName(str('eaName'));
+  var author = str('eaAuthor') || 'Anonymous';
+  var magic = int_('magicNumber');
+  var fixedLot = num('fixedLot');
+  var slPips = int_('slPips');
+  var tpPips = int_('tpPips');
+
+  var L = [];
+
+  /* ---------- HEADER ---------- */
+  L.push('//+------------------------------------------------------------------+');
+  L.push('//|                                                    '+eaName+'.mq5 |');
+  L.push('//|                                        Copyright 2026, '+author+' |');
+  L.push('//|                      Generated by MQL5 Forge - No-Code EA Builder |');
+  L.push('//+------------------------------------------------------------------+');
+  L.push('#property copyright "'+author+'"');
+  L.push('#property link      ""');
+  L.push('#property version   "1.00"');
+  L.push('#property strict');
+  L.push('');
+  L.push('#include <Trade\\Trade.mqh>');
+  L.push('CTrade trade;');
+  L.push('');
+
+  /* ---------- CUSTOM ENUMS ---------- */
+  var anyEnum = M.sig_bb || M.risk_trail;
+  if(anyEnum){
+    L.push('//+------------------------------------------------------------------+');
+    L.push('//| Custom Enumerations                                               |');
+    L.push('//+------------------------------------------------------------------+');
+  }
+  if(M.sig_bb){
+    L.push('enum ENUM_BB_MODE');
+    L.push('{');
+    L.push('   BB_BREAKOUT,   // Breakout');
+    L.push('   BB_REVERSION   // Reversion');
+    L.push('};');
+    L.push('');
+  }
+  if(M.risk_trail){
+    L.push('enum ENUM_TRAIL_MODE');
+    L.push('{');
+    L.push('   TRAIL_FIXED_PIPS,      // Fixed Pips');
+    L.push('   TRAIL_ATR_MULTIPLIER   // ATR Multiplier');
+    L.push('};');
+    L.push('');
+  }
+
+  /* ---------- INPUTS ---------- */
+  L.push('//+------------------------------------------------------------------+');
+  L.push('//| Input Parameters                                                  |');
+  L.push('//+------------------------------------------------------------------+');
+  L.push('//--- General Settings');
+  L.push('input long    InpMagicNumber   = '+magic+';        // Magic Number');
+  L.push('input double  InpFixedLot      = '+fixedLot+';        // Fixed Lot Size');
+  L.push('input int     InpStopLoss      = '+slPips+';          // Stop Loss (pips, 0=off)');
+  L.push('input int     InpTakeProfit    = '+tpPips+';          // Take Profit (pips, 0=off)');
+
+  if(M.risk_dynamic){
+    L.push('');
+    L.push('//--- Dynamic Position Sizing');
+    L.push('input double  InpRiskPercent   = '+num('dynamic_riskpct')+';         // Risk % of Equity per Trade');
+  }
+
+  if(M.sig_ema){
+    L.push('');
+    L.push('//--- MA Crossover (Entry Signal)');
+    L.push('input int                InpFastPeriod   = '+int_('ema_fast')+';   // Fast MA Period');
+    L.push('input int                InpSlowPeriod   = '+int_('ema_slow')+';   // Slow MA Period');
+    L.push('input ENUM_MA_METHOD     InpMAMethod     = '+sel('ema_method')+';   // MA Method');
+    L.push('input ENUM_APPLIED_PRICE InpAppliedPrice = '+sel('ema_price')+';   // Applied Price');
+    L.push('input ENUM_TIMEFRAMES    InpMATimeframe  = '+sel('ema_tf')+';   // MA Timeframe (MTF)');
+  }
+  if(M.sig_rsi){
+    L.push('');
+    L.push('//--- RSI Filter (Entry Signal)');
+    L.push('input int              InpRSIPeriod     = '+int_('rsi_period')+';   // RSI Period');
+    L.push('input double           InpRSIOverbought = '+num('rsi_ob')+';   // RSI Overbought Level');
+    L.push('input double           InpRSIOversold   = '+num('rsi_os')+';   // RSI Oversold Level');
+    L.push('input ENUM_TIMEFRAMES  InpRSITimeframe  = '+sel('rsi_tf')+';   // RSI Timeframe (MTF)');
+  }
+  if(M.sig_macd){
+    L.push('');
+    L.push('//--- MACD Cross (Entry Signal)');
+    L.push('input int              InpMACDFast      = '+int_('macd_fast')+';   // MACD Fast EMA');
+    L.push('input int              InpMACDSlow      = '+int_('macd_slow')+';   // MACD Slow EMA');
+    L.push('input int              InpMACDSignal    = '+int_('macd_signal')+';   // MACD Signal Period');
+    L.push('input ENUM_TIMEFRAMES  InpMACDTimeframe = '+sel('macd_tf')+';   // MACD Timeframe (MTF)');
+  }
+  if(M.sig_bb){
+    L.push('');
+    L.push('//--- Bollinger Bands (Entry Signal)');
+    L.push('input int              InpBBPeriod     = '+int_('bb_period')+';   // BB Period');
+    L.push('input double           InpBBDeviation  = '+num('bb_dev')+';   // BB Deviation');
+    L.push('input ENUM_BB_MODE     InpBBMode       = '+sel('bb_mode')+';   // BB Mode');
+    L.push('input ENUM_TIMEFRAMES  InpBBTimeframe  = '+sel('bb_tf')+';   // BB Timeframe (MTF)');
+  }
+  if(M.sig_stoch){
+    L.push('');
+    L.push('//--- Stochastic Oscillator (Entry Signal)');
+    L.push('input int              InpStochK          = '+int_('stoch_k')+';   // %K Period');
+    L.push('input int              InpStochD          = '+int_('stoch_d')+';   // %D Period');
+    L.push('input int              InpStochSlowing    = '+int_('stoch_slow')+';   // Slowing');
+    L.push('input double           InpStochOverbought = '+num('stoch_ob')+';   // Overbought Level');
+    L.push('input double           InpStochOversold   = '+num('stoch_os')+';   // Oversold Level');
+    L.push('input ENUM_TIMEFRAMES  InpStochTimeframe  = '+sel('stoch_tf')+';   // Stochastic Timeframe (MTF)');
+  }
+  if(M.sig_atr){
+    L.push('');
+    L.push('//--- ATR Volatility Filter (Entry Gate)');
+    L.push('input int              InpATRPeriod    = '+int_('atr_period')+';   // ATR Period');
+    L.push('input double           InpATRMinPips   = '+num('atr_minpips')+';   // Minimum ATR Required (pips)');
+    L.push('input ENUM_TIMEFRAMES  InpATRTimeframe = '+sel('atr_tf')+';   // ATR Timeframe (MTF)');
+  }
+  if(M.sig_engulf){
+    L.push('');
+    L.push('//--- Engulfing Candlestick (Entry Signal)');
+    L.push('input ENUM_TIMEFRAMES  InpEngulfTimeframe = '+sel('engulf_tf')+';   // Engulfing Timeframe (MTF)');
+  }
+  if(M.risk_trail){
+    L.push('');
+    L.push('//--- Trailing Stop');
+    L.push('input int              InpTrailStart         = '+int_('trail_start')+';   // Trailing Start (pips)');
+    L.push('input ENUM_TRAIL_MODE  InpTrailMode          = '+sel('trail_mode')+';   // Trailing Distance Mode');
+    L.push('input int              InpTrailDistance      = '+int_('trail_dist')+';   // Fixed Distance (pips) [mode=Fixed]');
+    L.push('input int              InpTrailATRPeriod     = '+int_('trail_atr_period')+';   // ATR Period [mode=ATR]');
+    L.push('input double           InpTrailATRMultiplier = '+num('trail_atr_mult')+';   // ATR Multiplier [mode=ATR]');
+    L.push('input int              InpTrailStep          = '+int_('trail_step')+';   // Trailing Step (pips)');
+  }
+  if(M.risk_be){
+    L.push('');
+    L.push('//--- Break Even Auto-Lock');
+    L.push('input int  InpBETrigger = '+int_('be_trigger')+';   // BE Trigger (pips)');
+    L.push('input int  InpBEOffset  = '+int_('be_offset')+';   // BE Profit Offset (pips)');
+  }
+  if(M.risk_partial){
+    L.push('');
+    L.push('//--- Partial Take Profit');
+    L.push('input int     InpPartialTriggerPips  = '+int_('partial_trigger')+';   // Partial TP Trigger (pips)');
+    L.push('input double  InpPartialClosePercent = '+num('partial_pct')+';   // Close % of Volume');
+  }
+  if(M.risk_maxtrades){
+    L.push('');
+    L.push('//--- Max Trades Limit');
+    L.push('input int  InpMaxTrades = '+int_('maxtrades_n')+';   // Max Simultaneous Open Trades');
+  }
+  if(M.risk_eqprotect){
+    L.push('');
+    L.push('//--- Equity Protection Cut-Off');
+    L.push('input double  InpEquityProtectPercent = '+num('eqprotect_pct')+';   // Max Drawdown from Peak Equity (%)');
+  }
+  if(M.risk_martingale){
+    L.push('');
+    L.push('//--- Martingale / Averaging (OPTIONAL - HIGH RISK)');
+    L.push('input double  InpMartMultiplier = '+num('mart_multiplier')+';   // Lot Multiplier per Step');
+    L.push('input int     InpMartDistance   = '+int_('mart_distance')+';   // Distance Between Steps (pips)');
+    L.push('input int     InpMartMaxSteps   = '+int_('mart_maxsteps')+';   // Max Averaging Steps');
+  }
+  if(M.filt_spread){
+    L.push('');
+    L.push('//--- Max Spread Filter');
+    L.push('input double  InpMaxSpreadPips = '+num('spread_max')+';   // Max Allowed Spread (pips)');
+  }
+  if(M.filt_slippage){
+    L.push('');
+    L.push('//--- Max Slippage Filter');
+    L.push('input int  InpMaxSlippagePoints = '+int_('slippage_max')+';   // Max Slippage (points)');
+  }
+  if(M.filt_session){
+    L.push('');
+    L.push('//--- Trading Session Filter (Server Time)');
+    L.push('input int  InpSessionStart = '+int_('sess_start')+';   // Session Start Hour (0-23)');
+    L.push('input int  InpSessionEnd   = '+int_('sess_end')+';   // Session End Hour (0-23)');
+  }
+  if(M.filt_daily){
+    L.push('');
+    L.push('//--- Daily Loss / Profit Limit');
+    L.push('input double  InpDailyMaxLossUSD   = '+num('daily_loss')+';   // Max Daily Loss ($, 0=off)');
+    L.push('input double  InpDailyMaxProfitUSD = '+num('daily_profit')+';   // Max Daily Profit Target ($, 0=off)');
+  }
+  if(M.exit_weekend){
+    L.push('');
+    L.push('//--- Close All at Weekend');
+    L.push('input int  InpWeekendCloseDay  = '+int_('weekend_day')+';   // Day of Week (0=Sun...6=Sat)');
+    L.push('input int  InpWeekendCloseHour = '+int_('weekend_hour')+';   // Server Hour to Close');
+  }
+  L.push('');
+
+  /* ---------- GLOBAL VARIABLES ---------- */
+  L.push('//+------------------------------------------------------------------+');
+  L.push('//| Global Variables                                                  |');
+  L.push('//+------------------------------------------------------------------+');
+  L.push('double g_pipSize;');
+  if(M.sig_ema){ L.push('int    hEmaFast = INVALID_HANDLE;'); L.push('int    hEmaSlow = INVALID_HANDLE;'); }
+  if(M.sig_rsi){ L.push('int    hRSI = INVALID_HANDLE;'); }
+  if(M.sig_macd){ L.push('int    hMACD = INVALID_HANDLE;'); }
+  if(M.sig_bb){ L.push('int    hBB = INVALID_HANDLE;'); }
+  if(M.sig_stoch){ L.push('int    hStoch = INVALID_HANDLE;'); }
+  if(M.sig_atr){ L.push('int    hATR = INVALID_HANDLE;'); }
+  if(M.risk_trail){ L.push('int    hTrailATR = INVALID_HANDLE;'); }
+  if(M.risk_partial || M.risk_martingale){ L.push('ulong  g_partialDoneTickets[];'); }
+  if(M.filt_onebar){ L.push('datetime g_lastTradeBarTime = 0;'); }
+  if(M.filt_daily){ L.push('double   g_dailyStartEquity = 0.0;'); L.push('int      g_currentDayOfYear = -1;'); }
+  if(M.risk_eqprotect){ L.push('double   g_peakEquity = 0.0;'); L.push('bool     g_emergencyStopped = false;'); }
+  if(M.risk_martingale){ L.push('int      g_martSteps = 0;'); L.push('double   g_martLastLot = 0.0;'); }
+  L.push('');
+
+  /* ---------- ONINIT ---------- */
+  L.push('//+------------------------------------------------------------------+');
+  L.push('//| Expert initialization function                                    |');
+  L.push('//+------------------------------------------------------------------+');
+  L.push('int OnInit()');
+  L.push('{');
+  L.push('   trade.SetExpertMagicNumber(InpMagicNumber);');
+  if(M.filt_slippage) L.push('   trade.SetDeviationInPoints(InpMaxSlippagePoints);');
+  L.push('');
+  L.push('   g_pipSize = (_Digits == 3 || _Digits == 5) ? _Point * 10.0 : _Point;');
+  L.push('');
+  if(M.sig_ema){
+    L.push('   hEmaFast = iMA(_Symbol, InpMATimeframe, InpFastPeriod, 0, InpMAMethod, InpAppliedPrice);');
+    L.push('   hEmaSlow = iMA(_Symbol, InpMATimeframe, InpSlowPeriod, 0, InpMAMethod, InpAppliedPrice);');
+    L.push('   if(hEmaFast == INVALID_HANDLE || hEmaSlow == INVALID_HANDLE)');
+    L.push('   {');
+    L.push('      Print("Failed to create MA indicator handles");');
+    L.push('      return(INIT_FAILED);');
+    L.push('   }');
+    L.push('');
+  }
+  if(M.sig_rsi){
+    L.push('   hRSI = iRSI(_Symbol, InpRSITimeframe, InpRSIPeriod, PRICE_CLOSE);');
+    L.push('   if(hRSI == INVALID_HANDLE)');
+    L.push('   {');
+    L.push('      Print("Failed to create RSI indicator handle");');
+    L.push('      return(INIT_FAILED);');
+    L.push('   }');
+    L.push('');
+  }
+  if(M.sig_macd){
+    L.push('   hMACD = iMACD(_Symbol, InpMACDTimeframe, InpMACDFast, InpMACDSlow, InpMACDSignal, PRICE_CLOSE);');
+    L.push('   if(hMACD == INVALID_HANDLE)');
+    L.push('   {');
+    L.push('      Print("Failed to create MACD indicator handle");');
+    L.push('      return(INIT_FAILED);');
+    L.push('   }');
+    L.push('');
+  }
+  if(M.sig_bb){
+    L.push('   hBB = iBands(_Symbol, InpBBTimeframe, InpBBPeriod, 0, InpBBDeviation, PRICE_CLOSE);');
+    L.push('   if(hBB == INVALID_HANDLE)');
+    L.push('   {');
+    L.push('      Print("Failed to create Bollinger Bands indicator handle");');
+    L.push('      return(INIT_FAILED);');
+    L.push('   }');
+    L.push('');
+  }
+  if(M.sig_stoch){
+    L.push('   hStoch = iStochastic(_Symbol, InpStochTimeframe, InpStochK, InpStochD, InpStochSlowing, MODE_SMA, STO_LOWHIGH);');
+    L.push('   if(hStoch == INVALID_HANDLE)');
+    L.push('   {');
+    L.push('      Print("Failed to create Stochastic indicator handle");');
+    L.push('      return(INIT_FAILED);');
+    L.push('   }');
+    L.push('');
+  }
+  if(M.sig_atr){
+    L.push('   hATR = iATR(_Symbol, InpATRTimeframe, InpATRPeriod);');
+    L.push('   if(hATR == INVALID_HANDLE)');
+    L.push('   {');
+    L.push('      Print("Failed to create ATR indicator handle");');
+    L.push('      return(INIT_FAILED);');
+    L.push('   }');
+    L.push('');
+  }
+  if(M.risk_trail){
+    L.push('   if(InpTrailMode == TRAIL_ATR_MULTIPLIER)');
+    L.push('   {');
+    L.push('      hTrailATR = iATR(_Symbol, _Period, InpTrailATRPeriod);');
+    L.push('      if(hTrailATR == INVALID_HANDLE)');
+    L.push('      {');
+    L.push('         Print("Failed to create Trailing ATR indicator handle");');
+    L.push('         return(INIT_FAILED);');
+    L.push('      }');
+    L.push('   }');
+    L.push('');
+  }
+  if(M.filt_daily){
+    L.push('   g_currentDayOfYear = -1; // force initialization on first tick');
+    L.push('');
+  }
+  if(M.risk_eqprotect){
+    L.push('   g_peakEquity = AccountInfoDouble(ACCOUNT_EQUITY);');
+    L.push('');
+  }
+  L.push('   return(INIT_SUCCEEDED);');
+  L.push('}');
+  L.push('');
+
+  /* ---------- ONDEINIT ---------- */
+  L.push('//+------------------------------------------------------------------+');
+  L.push('//| Expert deinitialization function                                  |');
+  L.push('//+------------------------------------------------------------------+');
+  L.push('void OnDeinit(const int reason)');
+  L.push('{');
+  var anyDeinit = M.sig_ema||M.sig_rsi||M.sig_macd||M.sig_bb||M.sig_stoch||M.sig_atr||M.risk_trail;
+  if(M.sig_ema){
+    L.push('   if(hEmaFast != INVALID_HANDLE) IndicatorRelease(hEmaFast);');
+    L.push('   if(hEmaSlow != INVALID_HANDLE) IndicatorRelease(hEmaSlow);');
+  }
+  if(M.sig_rsi) L.push('   if(hRSI != INVALID_HANDLE) IndicatorRelease(hRSI);');
+  if(M.sig_macd) L.push('   if(hMACD != INVALID_HANDLE) IndicatorRelease(hMACD);');
+  if(M.sig_bb) L.push('   if(hBB != INVALID_HANDLE) IndicatorRelease(hBB);');
+  if(M.sig_stoch) L.push('   if(hStoch != INVALID_HANDLE) IndicatorRelease(hStoch);');
+  if(M.sig_atr) L.push('   if(hATR != INVALID_HANDLE) IndicatorRelease(hATR);');
+  if(M.risk_trail) L.push('   if(hTrailATR != INVALID_HANDLE) IndicatorRelease(hTrailATR);');
+  if(!anyDeinit) L.push('   // No indicator handles to release');
+  L.push('}');
+  L.push('');
+
+  /* ---------- UTILITY FUNCTIONS ---------- */
+  L.push('//+------------------------------------------------------------------+');
+  L.push('//| Utility Functions                                                 |');
+  L.push('//+------------------------------------------------------------------+');
+  L.push('void CheckReturnCode(bool success, string action)');
+  L.push('{');
+  L.push('   if(!success)');
+  L.push('      PrintFormat("[%s] Order failed. Retcode=%d Description=%s", action, trade.ResultRetcode(), trade.ResultRetcodeDescription());');
+  L.push('   else');
+  L.push('      PrintFormat("[%s] Order executed successfully. Ticket=%I64u", action, trade.ResultOrder());');
+  L.push('}');
+  L.push('');
+
+  if(M.risk_dynamic){
+    L.push('double GetLotSize()');
+    L.push('{');
+    L.push('   if(InpStopLoss <= 0) return InpFixedLot;');
+    L.push('');
+    L.push('   double riskAmount = AccountInfoDouble(ACCOUNT_EQUITY) * InpRiskPercent / 100.0;');
+    L.push('   double tickValue  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);');
+    L.push('   double tickSize   = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);');
+    L.push('   double slDistance = InpStopLoss * g_pipSize;');
+    L.push('   if(tickSize <= 0) return InpFixedLot;');
+    L.push('');
+    L.push('   double lossPerLot = (slDistance / tickSize) * tickValue;');
+    L.push('   if(lossPerLot <= 0) return InpFixedLot;');
+    L.push('');
+    L.push('   double lot = riskAmount / lossPerLot;');
+    L.push('   double minLot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);');
+    L.push('   double maxLot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);');
+    L.push('   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);');
+    L.push('   lot = MathFloor(lot / lotStep) * lotStep;');
+    L.push('   lot = MathMax(minLot, MathMin(maxLot, lot));');
+    L.push('   return lot;');
+    L.push('}');
+  } else {
+    L.push('double GetLotSize()');
+    L.push('{');
+    L.push('   return InpFixedLot;');
+    L.push('}');
+  }
+  L.push('');
+
+  if(M.risk_partial || M.risk_martingale){
+    L.push('double NormalizeVolume(double volume)');
+    L.push('{');
+    L.push('   double minLot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);');
+    L.push('   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);');
+    L.push('   double normalized = MathFloor(volume / lotStep) * lotStep;');
+    L.push('   return (normalized >= minLot) ? normalized : 0.0;');
+    L.push('}');
+    L.push('');
+  }
+  if(M.risk_partial){
+    L.push('bool IsPartialDone(ulong ticket)');
+    L.push('{');
+    L.push('   for(int i = 0; i < ArraySize(g_partialDoneTickets); i++)');
+    L.push('      if(g_partialDoneTickets[i] == ticket) return true;');
+    L.push('   return false;');
+    L.push('}');
+    L.push('');
+    L.push('void MarkPartialDone(ulong ticket)');
+    L.push('{');
+    L.push('   int size = ArraySize(g_partialDoneTickets);');
+    L.push('   ArrayResize(g_partialDoneTickets, size + 1);');
+    L.push('   g_partialDoneTickets[size] = ticket;');
+    L.push('}');
+    L.push('');
+  }
+
+  if(M.risk_trail){
+    L.push('double GetTrailDistance()');
+    L.push('{');
+    L.push('   if(InpTrailMode == TRAIL_ATR_MULTIPLIER)');
+    L.push('   {');
+    L.push('      double atr[];');
+    L.push('      ArraySetAsSeries(atr, true);');
+    L.push('      if(CopyBuffer(hTrailATR, 0, 0, 1, atr) < 1) return InpTrailDistance * g_pipSize;');
+    L.push('      return atr[0] * InpTrailATRMultiplier;');
+    L.push('   }');
+    L.push('   return InpTrailDistance * g_pipSize;');
+    L.push('}');
+    L.push('');
+  }
+
+  if(M.risk_maxtrades){
+    L.push('int CountOpenPositions()');
+    L.push('{');
+    L.push('   int count = 0;');
+    L.push('   for(int i = 0; i < PositionsTotal(); i++)');
+    L.push('   {');
+    L.push('      ulong ticket = PositionGetTicket(i);');
+    L.push('      if(ticket <= 0 || !PositionSelectByTicket(ticket)) continue;');
+    L.push('      if(PositionGetInteger(POSITION_MAGIC) == InpMagicNumber && PositionGetString(POSITION_SYMBOL) == _Symbol)');
+    L.push('         count++;');
+    L.push('   }');
+    L.push('   return count;');
+    L.push('}');
+    L.push('');
+  }
+
+  if(M.filt_spread){
+    L.push('bool CheckSpreadOK()');
+    L.push('{');
+    L.push('   double spread = (SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID)) / g_pipSize;');
+    L.push('   return (spread <= InpMaxSpreadPips);');
+    L.push('}');
+    L.push('');
+  }
+
+  if(M.filt_session){
+    L.push('bool IsWithinSession()');
+    L.push('{');
+    L.push('   MqlDateTime dt;');
+    L.push('   TimeToStruct(TimeCurrent(), dt);');
+    L.push('   int hour = dt.hour;');
+    L.push('   if(InpSessionStart <= InpSessionEnd)');
+    L.push('      return (hour >= InpSessionStart && hour < InpSessionEnd);');
+    L.push('   else');
+    L.push('      return (hour >= InpSessionStart || hour < InpSessionEnd);');
+    L.push('}');
+    L.push('');
+  }
+
+  if(M.filt_daily){
+    L.push('void UpdateDailyTracking()');
+    L.push('{');
+    L.push('   MqlDateTime dt;');
+    L.push('   TimeToStruct(TimeCurrent(), dt);');
+    L.push('   if(dt.day_of_year != g_currentDayOfYear)');
+    L.push('   {');
+    L.push('      g_currentDayOfYear  = dt.day_of_year;');
+    L.push('      g_dailyStartEquity  = AccountInfoDouble(ACCOUNT_EQUITY);');
+    L.push('   }');
+    L.push('}');
+    L.push('');
+    L.push('bool CheckDailyLimit()');
+    L.push('{');
+    L.push('   double diff = AccountInfoDouble(ACCOUNT_EQUITY) - g_dailyStartEquity;');
+    L.push('   if(InpDailyMaxLossUSD > 0 && diff <= -InpDailyMaxLossUSD) return false;');
+    L.push('   if(InpDailyMaxProfitUSD > 0 && diff >= InpDailyMaxProfitUSD) return false;');
+    L.push('   return true;');
+    L.push('}');
+    L.push('');
+  }
+
+  if(M.risk_eqprotect){
+    L.push('void UpdateEquityProtection()');
+    L.push('{');
+    L.push('   double eq = AccountInfoDouble(ACCOUNT_EQUITY);');
+    L.push('   if(eq > g_peakEquity) g_peakEquity = eq;');
+    L.push('');
+    L.push('   if(!g_emergencyStopped && g_peakEquity > 0)');
+    L.push('   {');
+    L.push('      double ddPercent = (g_peakEquity - eq) / g_peakEquity * 100.0;');
+    L.push('      if(ddPercent >= InpEquityProtectPercent)');
+    L.push('      {');
+    L.push('         g_emergencyStopped = true;');
+    L.push('         PrintFormat("EMERGENCY STOP: Drawdown %.2f%% exceeded limit of %.2f%%. Closing all positions.", ddPercent, InpEquityProtectPercent);');
+    L.push('');
+    L.push('         for(int i = PositionsTotal() - 1; i >= 0; i--)');
+    L.push('         {');
+    L.push('            ulong ticket = PositionGetTicket(i);');
+    L.push('            if(ticket <= 0 || !PositionSelectByTicket(ticket)) continue;');
+    L.push('            if(PositionGetInteger(POSITION_MAGIC) != InpMagicNumber) continue;');
+    L.push('            if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;');
+    L.push('            trade.PositionClose(ticket);');
+    L.push('         }');
+    L.push('      }');
+    L.push('   }');
+    L.push('}');
+    L.push('');
+  }
+
+  if(M.risk_martingale){
+    L.push('void ManageMartingale()');
+    L.push('{');
+    L.push('   int  openCount = 0;');
+    L.push('   double lastPrice = 0;');
+    L.push('   long lastType = -1;');
+    L.push('');
+    L.push('   for(int i = PositionsTotal() - 1; i >= 0; i--)');
+    L.push('   {');
+    L.push('      ulong ticket = PositionGetTicket(i);');
+    L.push('      if(ticket <= 0 || !PositionSelectByTicket(ticket)) continue;');
+    L.push('      if(PositionGetInteger(POSITION_MAGIC) != InpMagicNumber) continue;');
+    L.push('      if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;');
+    L.push('      openCount++;');
+    L.push('      lastPrice = PositionGetDouble(POSITION_PRICE_OPEN);');
+    L.push('      lastType  = PositionGetInteger(POSITION_TYPE);');
+    L.push('   }');
+    L.push('');
+    L.push('   if(openCount == 0)');
+    L.push('   {');
+    L.push('      g_martSteps = 0;');
+    L.push('      g_martLastLot = 0.0;');
+    L.push('      return;');
+    L.push('   }');
+    L.push('');
+    L.push('   if(g_martSteps >= InpMartMaxSteps) return;');
+    L.push('');
+    L.push('   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);');
+    L.push('   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);');
+    L.push('   double distancePrice = InpMartDistance * g_pipSize;');
+    L.push('   double baseLot = (g_martLastLot > 0) ? g_martLastLot : GetLotSize();');
+    L.push('');
+    L.push('   if(lastType == POSITION_TYPE_BUY && (lastPrice - bid) >= distancePrice)');
+    L.push('   {');
+    L.push('      double newLot = NormalizeVolume(baseLot * InpMartMultiplier);');
+    L.push('      if(newLot > 0)');
+    L.push('      {');
+    L.push('         bool res = trade.Buy(newLot, _Symbol, ask, 0, 0, "MQL5Forge Averaging");');
+    L.push('         CheckReturnCode(res, "MART-BUY");');
+    L.push('         if(res){ g_martSteps++; g_martLastLot = newLot; }');
+    L.push('      }');
+    L.push('   }');
+    L.push('   else if(lastType == POSITION_TYPE_SELL && (ask - lastPrice) >= distancePrice)');
+    L.push('   {');
+    L.push('      double newLot = NormalizeVolume(baseLot * InpMartMultiplier);');
+    L.push('      if(newLot > 0)');
+    L.push('      {');
+    L.push('         bool res = trade.Sell(newLot, _Symbol, bid, 0, 0, "MQL5Forge Averaging");');
+    L.push('         CheckReturnCode(res, "MART-SELL");');
+    L.push('         if(res){ g_martSteps++; g_martLastLot = newLot; }');
+    L.push('      }');
+    L.push('   }');
+    L.push('}');
+    L.push('');
+  }
+
+  /* ---------- ENTRY SIGNAL FUNCTIONS ---------- */
+  if(M.sig_ema){
+    L.push('int SignalMACross()');
+    L.push('{');
+    L.push('   double fast[], slow[];');
+    L.push('   ArraySetAsSeries(fast, true);');
+    L.push('   ArraySetAsSeries(slow, true);');
+    L.push('   if(CopyBuffer(hEmaFast, 0, 0, 3, fast) < 3) return 0;');
+    L.push('   if(CopyBuffer(hEmaSlow, 0, 0, 3, slow) < 3) return 0;');
+    L.push('');
+    L.push('   if(fast[2] <= slow[2] && fast[1] > slow[1]) return 1;');
+    L.push('   if(fast[2] >= slow[2] && fast[1] < slow[1]) return -1;');
+    L.push('   return 0;');
+    L.push('}');
+    L.push('');
+  }
+  if(M.sig_rsi){
+    L.push('int SignalRSI()');
+    L.push('{');
+    L.push('   double rsi[];');
+    L.push('   ArraySetAsSeries(rsi, true);');
+    L.push('   if(CopyBuffer(hRSI, 0, 0, 2, rsi) < 2) return 0;');
+    L.push('');
+    L.push('   if(rsi[1] < InpRSIOversold) return 1;');
+    L.push('   if(rsi[1] > InpRSIOverbought) return -1;');
+    L.push('   return 0;');
+    L.push('}');
+    L.push('');
+  }
+  if(M.sig_macd){
+    L.push('int SignalMACD()');
+    L.push('{');
+    L.push('   double main[], sig[];');
+    L.push('   ArraySetAsSeries(main, true);');
+    L.push('   ArraySetAsSeries(sig, true);');
+    L.push('   if(CopyBuffer(hMACD, 0, 0, 3, main) < 3) return 0;');
+    L.push('   if(CopyBuffer(hMACD, 1, 0, 3, sig) < 3) return 0;');
+    L.push('');
+    L.push('   if(main[2] <= sig[2] && main[1] > sig[1]) return 1;');
+    L.push('   if(main[2] >= sig[2] && main[1] < sig[1]) return -1;');
+    L.push('   return 0;');
+    L.push('}');
+    L.push('');
+  }
+  if(M.sig_bb){
+    L.push('int SignalBollinger()');
+    L.push('{');
+    L.push('   double upper[], lower[];');
+    L.push('   ArraySetAsSeries(upper, true);');
+    L.push('   ArraySetAsSeries(lower, true);');
+    L.push('   if(CopyBuffer(hBB, 1, 0, 2, upper) < 2) return 0;');
+    L.push('   if(CopyBuffer(hBB, 2, 0, 2, lower) < 2) return 0;');
+    L.push('');
+    L.push('   double closePrice = iClose(_Symbol, InpBBTimeframe, 1);');
+    L.push('   if(InpBBMode == BB_BREAKOUT)');
+    L.push('   {');
+    L.push('      if(closePrice > upper[1]) return 1;');
+    L.push('      if(closePrice < lower[1]) return -1;');
+    L.push('   }');
+    L.push('   else');
+    L.push('   {');
+    L.push('      if(closePrice <= lower[1]) return 1;');
+    L.push('      if(closePrice >= upper[1]) return -1;');
+    L.push('   }');
+    L.push('   return 0;');
+    L.push('}');
+    L.push('');
+  }
+  if(M.sig_stoch){
+    L.push('int SignalStochastic()');
+    L.push('{');
+    L.push('   double main[], sig[];');
+    L.push('   ArraySetAsSeries(main, true);');
+    L.push('   ArraySetAsSeries(sig, true);');
+    L.push('   if(CopyBuffer(hStoch, 0, 0, 3, main) < 3) return 0;');
+    L.push('   if(CopyBuffer(hStoch, 1, 0, 3, sig) < 3) return 0;');
+    L.push('');
+    L.push('   if(main[2] <= sig[2] && main[1] > sig[1] && main[1] < InpStochOversold) return 1;');
+    L.push('   if(main[2] >= sig[2] && main[1] < sig[1] && main[1] > InpStochOverbought) return -1;');
+    L.push('   return 0;');
+    L.push('}');
+    L.push('');
+  }
+  if(M.sig_atr){
+    L.push('bool PassesVolatilityFilter()');
+    L.push('{');
+    L.push('   double atr[];');
+    L.push('   ArraySetAsSeries(atr, true);');
+    L.push('   if(CopyBuffer(hATR, 0, 0, 1, atr) < 1) return false;');
+    L.push('');
+    L.push('   double atrPips = atr[0] / g_pipSize;');
+    L.push('   return (atrPips >= InpATRMinPips);');
+    L.push('}');
+    L.push('');
+  }
+  if(M.sig_engulf){
+    L.push('int SignalEngulfing()');
+    L.push('{');
+    L.push('   double o1 = iOpen(_Symbol, InpEngulfTimeframe, 1), c1 = iClose(_Symbol, InpEngulfTimeframe, 1);');
+    L.push('   double o2 = iOpen(_Symbol, InpEngulfTimeframe, 2), c2 = iClose(_Symbol, InpEngulfTimeframe, 2);');
+    L.push('');
+    L.push('   if(c2 < o2 && c1 > o1 && c1 >= o2 && o1 <= c2) return 1;  // Bullish engulfing');
+    L.push('   if(c2 > o2 && c1 < o1 && c1 <= o2 && o1 >= c2) return -1; // Bearish engulfing');
+    L.push('   return 0;');
+    L.push('}');
+    L.push('');
+  }
+
+  L.push('int GetEntrySignal()');
+  L.push('{');
+  L.push('   int votesBuy = 0, votesSell = 0, activeModules = 0;');
+  L.push('');
+  if(M.sig_ema){ L.push('   int sMA = SignalMACross(); activeModules++; if(sMA == 1) votesBuy++; else if(sMA == -1) votesSell++;'); }
+  if(M.sig_rsi){ L.push('   int sRSI = SignalRSI(); activeModules++; if(sRSI == 1) votesBuy++; else if(sRSI == -1) votesSell++;'); }
+  if(M.sig_macd){ L.push('   int sMACD = SignalMACD(); activeModules++; if(sMACD == 1) votesBuy++; else if(sMACD == -1) votesSell++;'); }
+  if(M.sig_bb){ L.push('   int sBB = SignalBollinger(); activeModules++; if(sBB == 1) votesBuy++; else if(sBB == -1) votesSell++;'); }
+  if(M.sig_stoch){ L.push('   int sStoch = SignalStochastic(); activeModules++; if(sStoch == 1) votesBuy++; else if(sStoch == -1) votesSell++;'); }
+  if(M.sig_engulf){ L.push('   int sEngulf = SignalEngulfing(); activeModules++; if(sEngulf == 1) votesBuy++; else if(sEngulf == -1) votesSell++;'); }
+  L.push('');
+  L.push('   if(activeModules == 0) return 0;');
+  L.push('   if(votesBuy == activeModules) return 1;');
+  L.push('   if(votesSell == activeModules) return -1;');
+  L.push('   return 0;');
+  L.push('}');
+  L.push('');
+
+  /* ---------- AllowNewEntries ---------- */
+  L.push('bool AllowNewEntries()');
+  L.push('{');
+  if(M.risk_eqprotect) L.push('   if(g_emergencyStopped) return false;');
+  if(M.risk_maxtrades) L.push('   if(CountOpenPositions() >= InpMaxTrades) return false;');
+  if(M.filt_spread) L.push('   if(!CheckSpreadOK()) return false;');
+  if(M.filt_session) L.push('   if(!IsWithinSession()) return false;');
+  if(M.filt_daily) L.push('   if(!CheckDailyLimit()) return false;');
+  if(M.exit_weekend){
+    L.push('');
+    L.push('   MqlDateTime dt;');
+    L.push('   TimeToStruct(TimeCurrent(), dt);');
+    L.push('   if(dt.day_of_week == InpWeekendCloseDay && dt.hour >= InpWeekendCloseHour) return false;');
+  }
+  L.push('');
+  L.push('   return true;');
+  L.push('}');
+  L.push('');
+
+  /* ---------- OpenPosition ---------- */
+  L.push('void OpenPosition(int signal)');
+  L.push('{');
+  L.push('   double lot = GetLotSize();');
+  L.push('   double price = (signal == 1) ? SymbolInfoDouble(_Symbol, SYMBOL_ASK) : SymbolInfoDouble(_Symbol, SYMBOL_BID);');
+  L.push('   double sl = 0, tp = 0;');
+  L.push('');
+  L.push('   if(InpStopLoss > 0)');
+  L.push('      sl = (signal == 1) ? price - InpStopLoss * g_pipSize : price + InpStopLoss * g_pipSize;');
+  L.push('   if(InpTakeProfit > 0)');
+  L.push('      tp = (signal == 1) ? price + InpTakeProfit * g_pipSize : price - InpTakeProfit * g_pipSize;');
+  L.push('');
+  L.push('   bool result;');
+  L.push('   if(signal == 1)');
+  L.push('      result = trade.Buy(lot, _Symbol, price, sl, tp, "MQL5Forge Entry");');
+  L.push('   else');
+  L.push('      result = trade.Sell(lot, _Symbol, price, sl, tp, "MQL5Forge Entry");');
+  L.push('');
+  L.push('   CheckReturnCode(result, (signal == 1) ? "BUY" : "SELL");');
+  if(M.filt_onebar){
+    L.push('   if(result) g_lastTradeBarTime = iTime(_Symbol, _Period, 0);');
+  }
+  if(M.risk_martingale){
+    L.push('   if(result){ g_martSteps = 0; g_martLastLot = lot; }');
+  }
+  L.push('}');
+  L.push('');
+
+  /* ---------- ManageOpenPositions ---------- */
+  var anyPositionMgmt = M.risk_trail || M.risk_be || M.risk_partial;
+  L.push('void ManageOpenPositions()');
+  L.push('{');
+  if(anyPositionMgmt){
+    L.push('   for(int i = PositionsTotal() - 1; i >= 0; i--)');
+    L.push('   {');
+    L.push('      ulong ticket = PositionGetTicket(i);');
+    L.push('      if(ticket <= 0 || !PositionSelectByTicket(ticket)) continue;');
+    L.push('      if(PositionGetInteger(POSITION_MAGIC) != InpMagicNumber) continue;');
+    L.push('      if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;');
+    L.push('');
+    L.push('      long   posType   = PositionGetInteger(POSITION_TYPE);');
+    L.push('      double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);');
+    L.push('      double curSL     = PositionGetDouble(POSITION_SL);');
+    L.push('      double curTP     = PositionGetDouble(POSITION_TP);');
+    L.push('      double bid       = SymbolInfoDouble(_Symbol, SYMBOL_BID);');
+    L.push('      double ask       = SymbolInfoDouble(_Symbol, SYMBOL_ASK);');
+    L.push('');
+
+    if(M.risk_trail){
+      L.push('      //--- Trailing Stop (Fixed Pips / ATR Multiplier)');
+      L.push('      if(InpTrailStart > 0)');
+      L.push('      {');
+      L.push('         double trailDist = GetTrailDistance();');
+      L.push('         if(posType == POSITION_TYPE_BUY)');
+      L.push('         {');
+      L.push('            double profitPips = (bid - openPrice) / g_pipSize;');
+      L.push('            if(profitPips >= InpTrailStart)');
+      L.push('            {');
+      L.push('               double newSL = bid - trailDist;');
+      L.push('               if(curSL == 0 || newSL > curSL + InpTrailStep * g_pipSize)');
+      L.push('                  trade.PositionModify(ticket, newSL, curTP);');
+      L.push('            }');
+      L.push('         }');
+      L.push('         else if(posType == POSITION_TYPE_SELL)');
+      L.push('         {');
+      L.push('            double profitPips = (openPrice - ask) / g_pipSize;');
+      L.push('            if(profitPips >= InpTrailStart)');
+      L.push('            {');
+      L.push('               double newSL = ask + trailDist;');
+      L.push('               if(curSL == 0 || newSL < curSL - InpTrailStep * g_pipSize)');
+      L.push('                  trade.PositionModify(ticket, newSL, curTP);');
+      L.push('            }');
+      L.push('         }');
+      L.push('      }');
+      L.push('');
+    }
+    if(M.risk_be){
+      L.push('      //--- Break Even Auto-Lock');
+      L.push('      if(InpBETrigger > 0)');
+      L.push('      {');
+      L.push('         if(posType == POSITION_TYPE_BUY)');
+      L.push('         {');
+      L.push('            double profitPips = (bid - openPrice) / g_pipSize;');
+      L.push('            double beLevel = openPrice + InpBEOffset * g_pipSize;');
+      L.push('            if(profitPips >= InpBETrigger && (curSL == 0 || curSL < beLevel))');
+      L.push('               trade.PositionModify(ticket, beLevel, curTP);');
+      L.push('         }');
+      L.push('         else if(posType == POSITION_TYPE_SELL)');
+      L.push('         {');
+      L.push('            double profitPips = (openPrice - ask) / g_pipSize;');
+      L.push('            double beLevel = openPrice - InpBEOffset * g_pipSize;');
+      L.push('            if(profitPips >= InpBETrigger && (curSL == 0 || curSL > beLevel))');
+      L.push('               trade.PositionModify(ticket, beLevel, curTP);');
+      L.push('         }');
+      L.push('      }');
+      L.push('');
+    }
+    if(M.risk_partial){
+      L.push('      //--- Partial Take Profit');
+      L.push('      if(InpPartialTriggerPips > 0 && !IsPartialDone(ticket))');
+      L.push('      {');
+      L.push('         double profitPips = (posType == POSITION_TYPE_BUY) ? (bid - openPrice) / g_pipSize : (openPrice - ask) / g_pipSize;');
+      L.push('         if(profitPips >= InpPartialTriggerPips)');
+      L.push('         {');
+      L.push('            double volume = PositionGetDouble(POSITION_VOLUME);');
+      L.push('            double closeVolume = NormalizeVolume(volume * InpPartialClosePercent / 100.0);');
+      L.push('            if(closeVolume > 0 && closeVolume < volume)');
+      L.push('            {');
+      L.push('               if(trade.PositionClosePartial(ticket, closeVolume))');
+      L.push('                  MarkPartialDone(ticket);');
+      L.push('            }');
+      L.push('         }');
+      L.push('      }');
+    }
+    L.push('   }');
+  } else {
+    L.push('   // No active position-management modules selected');
+  }
+
+  if(M.risk_martingale){
+    L.push('');
+    L.push('   //--- Martingale / Averaging');
+    L.push('   ManageMartingale();');
+  }
+
+  if(M.exit_opposite){
+    L.push('');
+    L.push('   //--- Close on Opposite Signal');
+    L.push('   int currentSignal = GetEntrySignal();');
+    L.push('   if(currentSignal != 0)');
+    L.push('   {');
+    L.push('      for(int i = PositionsTotal() - 1; i >= 0; i--)');
+    L.push('      {');
+    L.push('         ulong ticket = PositionGetTicket(i);');
+    L.push('         if(ticket <= 0 || !PositionSelectByTicket(ticket)) continue;');
+    L.push('         if(PositionGetInteger(POSITION_MAGIC) != InpMagicNumber) continue;');
+    L.push('         if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;');
+    L.push('');
+    L.push('         long posType = PositionGetInteger(POSITION_TYPE);');
+    L.push('         if((posType == POSITION_TYPE_BUY  && currentSignal == -1) ||');
+    L.push('            (posType == POSITION_TYPE_SELL && currentSignal == 1))');
+    L.push('            trade.PositionClose(ticket);');
+    L.push('      }');
+    L.push('   }');
+  }
+
+  if(M.exit_weekend){
+    L.push('');
+    L.push('   //--- Close All at Weekend');
+    L.push('   MqlDateTime dtw;');
+    L.push('   TimeToStruct(TimeCurrent(), dtw);');
+    L.push('   if(dtw.day_of_week == InpWeekendCloseDay && dtw.hour >= InpWeekendCloseHour)');
+    L.push('   {');
+    L.push('      for(int i = PositionsTotal() - 1; i >= 0; i--)');
+    L.push('      {');
+    L.push('         ulong ticket = PositionGetTicket(i);');
+    L.push('         if(ticket <= 0 || !PositionSelectByTicket(ticket)) continue;');
+    L.push('         if(PositionGetInteger(POSITION_MAGIC) != InpMagicNumber) continue;');
+    L.push('         if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;');
+    L.push('         trade.PositionClose(ticket);');
+    L.push('      }');
+    L.push('   }');
+  }
+  L.push('}');
+  L.push('');
+
+  /* ---------- ONTICK ---------- */
+  L.push('//+------------------------------------------------------------------+');
+  L.push('//| Expert tick function                                              |');
+  L.push('//+------------------------------------------------------------------+');
+  L.push('void OnTick()');
+  L.push('{');
+  if(M.risk_eqprotect) L.push('   UpdateEquityProtection();');
+  if(M.filt_daily) L.push('   UpdateDailyTracking();');
+  L.push('   ManageOpenPositions();');
+  L.push('');
+  L.push('   if(!AllowNewEntries()) return;');
+  L.push('');
+  L.push('   int signal = GetEntrySignal();');
+  L.push('   if(signal == 0) return;');
+  if(M.filt_onebar){
+    L.push('');
+    L.push('   if(iTime(_Symbol, _Period, 0) == g_lastTradeBarTime) return; // one trade per bar');
+  }
+  if(M.sig_atr){
+    L.push('');
+    L.push('   if(!PassesVolatilityFilter()) return;');
+  }
+  L.push('');
+  L.push('   OpenPosition(signal);');
+  L.push('}');
+  L.push('//+------------------------------------------------------------------+');
+
+  return L.join('\n');
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function render(){
+  var code = buildMQL5();
+  lastGeneratedCode = code;
+
+  var lines = code.split('\n');
+  var html = '';
+  for(var i=0;i<lines.length;i++){
+    var raw = lines[i];
+    var trimmed = raw.trim();
+    var cls = '';
+    if(trimmed === '') cls = 'is-blank';
+    else if(trimmed.indexOf('//') === 0) cls = 'is-comment';
+    else if(trimmed.indexOf('#') === 0) cls = 'is-prep';
+    html += '<div class="code-line '+cls+'"><span class="ln">'+(i+1)+'</span><span class="code-text">'+ (escapeHtml(raw) || ' ') +'</span></div>';
+  }
+  document.getElementById('codeBody').innerHTML = html;
+  document.getElementById('statLines').textContent = lines.length;
+  document.getElementById('statSize').textContent = formatBytes(new Blob([code]).size);
+
+  var activeCount = Object.keys(activeModules).filter(function(k){return activeModules[k];}).length;
+  document.getElementById('statModules').textContent = activeCount;
+
+  updateBlueprint();
+}
+
+/* ============================================================
+   ACTIONS
+============================================================ */
+function showToast(text){
+  var t = document.getElementById('toast');
+  document.getElementById('toastText').textContent = text;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2000);
+}
+
+function copyCode(){
+  var code = lastGeneratedCode;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(function(){
+      showToast('Kode berhasil disalin');
+    }).catch(function(){
+      fallbackCopy(code);
+    });
+  } else {
+    fallbackCopy(code);
+  }
+}
+
+function fallbackCopy(code){
+  var ta = document.createElement('textarea');
+  ta.value = code;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try{ document.execCommand('copy'); showToast('Kode berhasil disalin'); }catch(e){ showToast('Gagal menyalin kode'); }
+  document.body.removeChild(ta);
+}
+
+function downloadCode(){
+  var name = sanitizeName(document.getElementById('eaName').value || 'MyExpertAdvisor');
+  var blob = new Blob([lastGeneratedCode], {type:'text/plain;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = name + '.mq5';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('File '+name+'.mq5 diunduh');
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+onNameInput();
+updateSectionBadges();
+render();
+</script>
+</body>
+</html>
